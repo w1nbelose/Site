@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>ЛЕЧЕБНИЦА — 3D хоррор</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#cfc8ba;font-family:Georgia,"Times New Roman",serif;user-select:none;-webkit-user-select:none;touch-action:none}
+canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+canvas#grain{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;opacity:.07;mix-blend-mode:screen}
+#vig{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 38%,rgba(0,0,0,.55) 75%,rgba(0,0,0,.95) 100%)}
+#red{position:fixed;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center,rgba(120,0,0,0) 30%,rgba(120,0,0,.55) 100%)}
+#fade{position:fixed;inset:0;pointer-events:none;background:#000;opacity:0;transition:opacity 1.2s}
+#hud{position:fixed;left:18px;bottom:16px;pointer-events:none;font-size:13px;letter-spacing:.18em;text-shadow:0 0 6px #000;opacity:0;transition:opacity .6s}
+#hud.on{opacity:.85}
+#hud .row{display:flex;align-items:center;gap:10px;margin-top:7px}
+#hud .lbl{width:74px}
+.bar{width:130px;height:6px;border:1px solid rgba(207,200,186,.45);background:rgba(0,0,0,.4)}
+.bar i{display:block;height:100%;width:100%;background:#cfc8ba}
+#bBat i{background:#c9b458}#bSta i{background:#8fa6a0}
+#keys{font-size:15px;color:#d8b04a}
+#dot{position:fixed;left:50%;top:50%;width:4px;height:4px;margin:-2px;border-radius:50%;background:rgba(255,255,255,.35);pointer-events:none;display:none}
+#msg{position:fixed;left:50%;bottom:17%;transform:translateX(-50%);width:min(760px,88vw);text-align:center;font-size:19px;line-height:1.5;font-style:italic;color:#e2dccd;text-shadow:0 0 10px #000,0 0 3px #000;opacity:0;transition:opacity .7s;pointer-events:none}
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:radial-gradient(ellipse at center,rgba(0,0,0,.55),rgba(0,0,0,.93));padding:20px;z-index:5}
+.hidden{display:none!important}
+h1{font-size:clamp(40px,9vw,104px);font-weight:400;letter-spacing:.22em;color:#b9261c;text-shadow:0 0 28px rgba(160,0,0,.7),0 0 2px #000;animation:fl 5s infinite}
+h2{font-size:clamp(28px,6vw,64px);font-weight:400;letter-spacing:.16em;color:#b9261c;text-shadow:0 0 24px rgba(160,0,0,.7)}
+@keyframes fl{0%,100%{opacity:1}47%{opacity:1}48%{opacity:.35}49%{opacity:1}71%{opacity:.6}72%{opacity:1}90%{opacity:.2}91%{opacity:1}}
+.sub{margin-top:14px;font-style:italic;font-size:17px;max-width:620px;line-height:1.55;color:#aaa294}
+.keysHelp{margin-top:26px;font-size:13px;letter-spacing:.12em;line-height:2;color:#8c867a}
+.keysHelp b{color:#cfc8ba;font-weight:400;border:1px solid #5d584f;padding:1px 7px;margin:0 2px}
+button{margin-top:30px;font:inherit;font-size:19px;letter-spacing:.3em;padding:13px 44px;color:#e2dccd;background:rgba(90,10,8,.35);border:1px solid #8a2219;cursor:pointer;transition:.25s}
+button:hover{background:rgba(150,20,14,.6);box-shadow:0 0 24px rgba(180,20,10,.5)}
+#touch{position:fixed;inset:0;pointer-events:none;display:none;z-index:3}
+#touch .tb{position:absolute;right:18px;width:66px;height:66px;border-radius:50%;border:1px solid rgba(207,200,186,.4);background:rgba(0,0,0,.3);color:#cfc8ba;font-size:11px;letter-spacing:.08em;display:flex;align-items:center;justify-content:center;pointer-events:auto}
+#tRun{bottom:100px}#tLight{bottom:22px}
+#touch .tb.act{background:rgba(160,30,20,.5)}
+#stick{position:absolute;width:110px;height:110px;margin:-55px;border-radius:50%;border:1px solid rgba(207,200,186,.3);display:none}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<canvas id="grain" width="384" height="216"></canvas>
+<div id="vig"></div><div id="red"></div>
+<div id="dot"></div>
+<div id="hud">
+  <div id="keys">КЛЮЧИ 0/5</div>
+  <div class="row"><span class="lbl">ФОНАРЬ</span><div class="bar" id="bBat"><i></i></div></div>
+  <div class="row"><span class="lbl">СИЛЫ</span><div class="bar" id="bSta"><i></i></div></div>
+</div>
+<div id="msg"></div>
+<div id="touch"><div id="stick"></div><div class="tb" id="tRun">БЕГ</div><div class="tb" id="tLight">СВЕТ</div></div>
+<div id="fade"></div>
+
+<div id="menu" class="screen">
+  <h1>ЛЕЧЕБНИЦА</h1>
+  <p class="sub">Ты очнулся в заброшенной психиатрической лечебнице. Двери заперты снаружи. Найди пять ключей и выберись. Ты здесь не один.</p>
+  <p class="keysHelp"><b>W</b><b>A</b><b>S</b><b>D</b> ходьба &nbsp; <b>МЫШЬ</b> осмотр &nbsp; <b>SHIFT</b> бег &nbsp; <b>F</b> фонарь<br>Оно плохо видит в темноте, но замечает свет фонаря и слышит бег.<br>Играй в наушниках.</p>
+  <button id="start">ВОЙТИ</button>
+</div>
+<div id="pause" class="screen hidden">
+  <h2>ПАУЗА</h2>
+  <p class="sub">Нажми, чтобы продолжить</p>
+</div>
+<div id="end" class="screen hidden">
+  <h2 id="endTitle"></h2>
+  <p class="sub" id="endSub"></p>
+  <button id="again">ЗАНОВО</button>
+</div>
+
+<script>/*__THREE__*/</script>
+<script>/*__GAME__*/</script>
+</body>
+</html>

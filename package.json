@@ -1,0 +1,7 @@
+{
+  "name": "horror-game",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "node build.mjs", "test": "node build.mjs && node test.mjs" },
+  "devDependencies": { "puppeteer-core": "^23.0.0", "three": "0.158.0" }
+}
