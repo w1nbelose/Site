@@ -8,3 +8,8 @@ const html = read('./src/template.html')
   .replace('/*__GAME__*/', () => safe(read('./src/game.js')));
 writeFileSync(new URL('./horror.html', import.meta.url), html);
 console.log(`horror.html: ${(html.length / 1024).toFixed(0)} KB`);
+const html2 = read('./src/template2.html')
+  .replace('/*__THREE__*/', () => safe(read('./node_modules/three/build/three.min.js')))
+  .replace('/*__GAME__*/', () => safe(read('./src/bunker.js')));
+writeFileSync(new URL('./bunker.html', import.meta.url), html2);
+console.log(`bunker.html: ${(html2.length / 1024).toFixed(0)} KB`);

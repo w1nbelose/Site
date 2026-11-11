@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>БУНКЕР 7 — 3D хоррор</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#c8cbc0;font-family:"Courier New",Courier,monospace;user-select:none;-webkit-user-select:none;touch-action:none}
+canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+canvas#grain{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;opacity:.07;mix-blend-mode:screen}
+#vig{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 36%,rgba(0,0,0,.6) 74%,rgba(0,0,0,.96) 100%)}
+#red{position:fixed;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center,rgba(120,0,0,0) 30%,rgba(130,0,0,.6) 100%)}
+#fade{position:fixed;inset:0;pointer-events:none;background:#000;opacity:0;transition:opacity 1.2s}
+#hud{position:fixed;left:18px;bottom:16px;pointer-events:none;font-size:13px;letter-spacing:.14em;text-shadow:0 0 6px #000;opacity:0;transition:opacity .6s}
+#hud.on{opacity:.9}
+#hud .row{display:flex;align-items:center;gap:10px;margin-top:7px}
+#hud .lbl{width:76px}
+.bar{width:140px;height:6px;border:1px solid rgba(200,203,192,.45);background:rgba(0,0,0,.4)}
+.bar i{display:block;height:100%;width:0;background:#8fd08f}
+#inv{margin-top:9px;color:#d8b04a}
+#keys{font-size:15px;color:#d8b04a}
+#prompt{position:fixed;left:50%;bottom:23%;transform:translateX(-50%);font-size:15px;letter-spacing:.16em;color:#e8dfc4;text-shadow:0 0 8px #000;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
+#dot{position:fixed;left:50%;top:50%;width:4px;height:4px;margin:-2px;border-radius:50%;background:rgba(255,255,255,.3);pointer-events:none;display:none}
+#msg{position:fixed;left:50%;bottom:15%;transform:translateX(-50%);width:min(760px,88vw);text-align:center;font-size:18px;line-height:1.5;font-style:italic;color:#e0dbcb;text-shadow:0 0 10px #000,0 0 3px #000;opacity:0;transition:opacity .7s;pointer-events:none}
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:radial-gradient(ellipse at center,rgba(0,0,0,.6),rgba(0,0,0,.94));padding:20px;z-index:5}
+.hidden{display:none!important}
+h1{font-size:clamp(38px,8.4vw,96px);font-weight:400;letter-spacing:.16em;color:#d8a52c;text-shadow:0 0 30px rgba(216,165,44,.45),0 0 2px #000;animation:fl 6s infinite}
+h2{font-size:clamp(28px,6vw,60px);font-weight:400;letter-spacing:.14em;color:#d8a52c;text-shadow:0 0 24px rgba(216,165,44,.4)}
+@keyframes fl{0%,100%{opacity:1}13%{opacity:1}14%{opacity:.55}15%{opacity:1}61%{opacity:1}62%{opacity:.3}64%{opacity:1}88%{opacity:.7}89%{opacity:1}}
+.sub{margin-top:14px;font-style:italic;font-size:16px;max-width:660px;line-height:1.6;color:#a8a99e}
+.keysHelp{margin-top:24px;font-size:13px;letter-spacing:.08em;line-height:2;color:#8d8f85}
+.keysHelp b{color:#c8cbc0;font-weight:400;border:1px solid #5a5c54;padding:1px 7px;margin:0 2px}
+button{margin-top:28px;font:inherit;font-size:18px;letter-spacing:.26em;padding:13px 42px;color:#e8dfc4;background:rgba(60,45,6,.4);border:1px solid #8a6a14;cursor:pointer;transition:.25s}
+button:hover{background:rgba(120,90,12,.6);box-shadow:0 0 24px rgba(200,150,30,.4)}
+#touch{position:fixed;inset:0;pointer-events:none;display:none;z-index:3}
+#touch .tb{position:absolute;right:16px;width:62px;height:62px;border-radius:50%;border:1px solid rgba(200,203,192,.4);background:rgba(0,0,0,.35);color:#c8cbc0;font-size:10px;letter-spacing:.06em;display:flex;align-items:center;justify-content:center;pointer-events:auto;text-align:center}
+#tAct{bottom:16px}#tThrow{bottom:88px}#tLight{bottom:160px}#tCrouch{bottom:232px}
+#touch .tb.act{background:rgba(180,130,20,.5)}
+#stick{position:absolute;width:110px;height:110px;margin:-55px;border-radius:50%;border:1px solid rgba(200,203,192,.3);display:none}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<canvas id="grain" width="384" height="216"></canvas>
+<div id="vig"></div><div id="red"></div>
+<div id="dot"></div>
+<div id="hud">
+  <div id="keys">ДИЗЕЛИ 0/3</div>
+  <div class="row"><span class="lbl">ШУМ</span><div class="bar" id="bNoise"><i></i></div></div>
+  <div class="row"><span class="lbl">ФОНАРЬ</span><div class="bar" id="bBat"><i></i></div></div>
+  <div id="inv"></div>
+</div>
+<div id="prompt"></div>
+<div id="msg"></div>
+<div id="touch"><div id="stick"></div><div class="tb" id="tCrouch">ПРИСЕСТЬ</div><div class="tb" id="tLight">СВЕТ</div><div class="tb" id="tThrow">БРОСОК</div><div class="tb" id="tAct">ДЕЙСТВИЕ</div></div>
+<div id="fade"></div>
+
+<div id="menu" class="screen">
+  <h1>БУНКЕР 7</h1>
+  <p class="sub">Объект 7 затоплен и обесточен. Лифт наверх не работает. Запусти три дизеля в трёх концах бункера — и уходи. Канистры топлива где-то внизу.</p>
+  <p class="keysHelp">
+    <b>W</b><b>A</b><b>S</b><b>D</b> ходьба &nbsp; <b>МЫШЬ</b> осмотр &nbsp; <b>SHIFT</b> бег &nbsp; <b>CTRL</b>/<b>C</b> присесть &nbsp; <b>F</b> фонарь<br>
+    <b>E</b> действие &nbsp; <b>Q</b>/<b>ЛКМ</b> бросить болт &nbsp; <b>E</b> у шкафчика — спрятаться<br>
+    Оно слепое. Совсем: глаз нет, только уши. Оно слышит шаги, бег, воду и лязг железа.<br>
+    Свет ему безразличен. Тишина — единственная защита. Играй в наушниках.
+  </p>
+  <button id="start">СПУСТИТЬСЯ</button>
+</div>
+<div id="pause" class="screen hidden">
+  <h2>ПАУЗА</h2>
+  <p class="sub">Нажми, чтобы продолжить</p>
+</div>
+<div id="end" class="screen hidden">
+  <h2 id="endTitle"></h2>
+  <p class="sub" id="endSub"></p>
+  <button id="again">ЗАНОВО</button>
+</div>
+
+<script>/*__THREE__*/</script>
+<script>/*__GAME__*/</script>
+</body>
+</html>
